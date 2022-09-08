@@ -53,28 +53,28 @@ let onOffValue = onOffSwitch.checked
 let rgbValue = "{{ rgb }}"
 let whiteValue = "{{ white }}"
 
-let setControlsVisibliity = function() {
+function setControlsVisibliity() {
     controlsDisplay.hidden = !onOffValue
     onOffLabel.textContent = onOffValue ? 'On' : 'Off'
 }
 
-let updateOnOffValue = function() {
+function updateOnOffValue() {
     onOffValue = onOffSwitch.checked
     setControlsVisibliity();
-    sendValuesToServer();
+    updateLights();
 }
 
-let updateRgbValue = function() {
+function updateRgbValue() {
     rgbValue = rgbSwitch.value
-    sendValuesToServer();
+    updateLights();
 }
 
-let updateWhiteValue = function() {
+function updateWhiteValue() {
     whiteValue = whiteSwitch.value
-    sendValuesToServer();
+    updateLights();
 }
 
-let setBusy = function() {
+function setBusy() {
     busy = true;
     busyIndicator.hidden = false;
     onOffSwitch.disabled = true;
@@ -82,7 +82,7 @@ let setBusy = function() {
     whiteSwitch.disabled = true;
 }
 
-let setReady = function() {
+function setReady() {
     busy = false;
     busyIndicator.hidden = true;
     onOffSwitch.disabled = false;
@@ -90,14 +90,33 @@ let setReady = function() {
     whiteSwitch.disabled = false;
 }
 
-let sendValuesToServer = function() {
+function updateLights() {
     if(busy) {
-        console.log("busy")
         return;
     }
-    console.log("sending")
     setBusy();
-    // setReady();
+
+    let formData = new FormData();
+    formData.append('onoff', onOffValue);
+    formData.append('rgb', rgbValue);
+    formData.append('white', whiteValue);
+
+    fetch('/update',{
+        method: "POST",
+        body: formData
+    })
+        .then((response) => {
+            if (response.ok) {
+                return response.json();
+            }
+            throw new Error('Something went wrong');
+            })
+        .then((responseJson) => {
+            setReady();
+        })
+        .catch((error) => {
+            setReady();
+        });
 }
 
 onOffSwitch.addEventListener("change", updateOnOffValue);
