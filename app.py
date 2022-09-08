@@ -1,8 +1,12 @@
+#! /usr/bin/python3
+
 from flask import Flask, request, jsonify, render_template
 from os.path import exists
 import json
+import pigpio
 
 app = Flask(__name__)
+pi = pigpio.pi()
 
 # Default light values
 ONOFF = ''
@@ -22,6 +26,7 @@ if exists(DATAPATH):
 
 
 def setLightValues(red, green, blue, white):
+    # Commented for non-pi testing. Bring back to make it do stuff
     # pi.set_PWM_dutycycle(24, red)
     # pi.set_PWM_dutycycle(20, blue)
     # pi.set_PWM_dutycycle(25, green)
