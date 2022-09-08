@@ -1,10 +1,25 @@
 from flask import Flask, request, jsonify, render_template
+from os.path import exists
 import json
 
 app = Flask(__name__)
-ONOFF = 'checked'
-RGB = '#32a852'
-WHITE = '30'
+
+# Default light values
+ONOFF = ''
+RGB = '#000000'
+WHITE = '128'
+DATAPATH = 'data.json'
+
+if exists(DATAPATH):
+    with open(DATAPATH, 'r') as f:
+        try:
+            savedData = json.load(f);
+            WHITE = savedData["white"]
+            RGB =savedData["rgb"]
+            ONOFF = savedData["onoff"]
+        except:
+            print("could not load valid data")
+
 
 def setLightValues(red, green, blue, white):
     # pi.set_PWM_dutycycle(24, red)
@@ -31,11 +46,12 @@ def update():
         RGB = request.form.get('rgb')
 
         rgbValues = tuple(int(RGB.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
+
         setLightValues(rgbValues[0], rgbValues[1], rgbValues[2], WHITE)
 
     # Store data for persistence
-    updateData = {"onoff": ONOFF, "rgb": RGB, "white": WHITE, "rgb": rgbValues[0]}
-    with open('data.json', 'w') as f:
+    updateData = {"onoff": ONOFF, "rgb": RGB, "white": WHITE}
+    with open(DATAPATH, 'w') as f:
         json.dump(updateData, f)
 
     return jsonify(updateData);
