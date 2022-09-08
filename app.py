@@ -11,19 +11,8 @@ pi = pigpio.pi()
 # Default light values
 ONOFF = ''
 RGB = '#000000'
-WHITE = '128'
+WHITE = '0'
 DATAPATH = 'data.json'
-
-if exists(DATAPATH):
-    with open(DATAPATH, 'r') as f:
-        try:
-            savedData = json.load(f);
-            WHITE = savedData["white"]
-            RGB =savedData["rgb"]
-            ONOFF = savedData["onoff"]
-        except:
-            print("could not load valid data")
-
 
 def setLightValues(red, green, blue, white):
     # Commented for non-pi testing. Bring back to make it do stuff
@@ -35,10 +24,12 @@ def setLightValues(red, green, blue, white):
 
 @app.route('/')
 def index():
-    return render_template('index.html', on_off=ONOFF, rgb=RGB, white=WHITE)
+    return render_template('index.html')
 
 @app.route('/update', methods=['POST'])
 def update():
+    global RGB, WHITE, ONOFF
+
     # Turn it all off
     if request.form.get('onoff') == 'off':
         ONOFF=''
@@ -60,6 +51,16 @@ def update():
         json.dump(updateData, f)
 
     return jsonify(updateData);
+
+@app.route('/status', methods=['GET'])
+def status():
+    if exists(DATAPATH):
+        with open(DATAPATH, 'r') as f:
+            try:
+                savedData = json.load(f);
+                return jsonify(savedData);
+            except:
+                return {"onoff": ONOFF, "rgb": RGB, "white": WHITE, "error": "no data"}
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')

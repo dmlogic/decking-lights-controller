@@ -12,22 +12,25 @@
     <header class="container bg-dark bg-gradient text-white">
         <div class="d-flex align-items-center">
             <h1 class="my-4">Decking lights </h1>
-            <div class="spinner-border text-secondary ms-auto" role="status" hidden id="spinner">
+            <div class="spinner-border text-secondary ms-auto" role="status" id="spinner">
                 <span class="visually-hidden">Loading...</span>
             </div>
         </div>
     </header>
     <div class="container">
+        <div class="alert alert-danger m-3" role="alert" hidden id="error">
+            <p><strong></strong></p>
+            <p>Please refresh the page to try again. If this problem persists, reboot the lights.</p>
+        </div>
         <div class="form-check form-switch fs-1 my-4">
-            <input class="form-check-input" type="checkbox" role="switch" id="onOff" {{ on_off }}>
+            <input class="form-check-input" type="checkbox" role="switch" id="onOff" disabled>
             <label class="form-check-label fs-3" for="onOff" id="onOffLabel"></label>
         </div>
         <div id="controls" hidden>
             <label for="rgb" class="h2 my-4">Colour</label>
             <p>
                 <input id="rgb"
-                       type="color"
-                       value="{{ rgb }}">
+                       type="color">
             </p>
             <label for="white" class="h2 my-4">White</label>
             <p>
@@ -36,8 +39,7 @@
                        min="0"
                        max="100"
                        step="1"
-                       id="white"
-                       value="{{ white }}">
+                       id="white">
             </p>
         </div>
     </div>
@@ -48,29 +50,15 @@ const rgbSwitch = document.getElementById("rgb")
 const whiteSwitch = document.getElementById("white")
 const controlsDisplay = document.getElementById("controls")
 const busyIndicator = document.getElementById("spinner")
-let busy = false
-let onOffValue = onOffSwitch.checked
-let rgbValue = "{{ rgb }}"
-let whiteValue = "{{ white }}"
+let busy = true
 
 function setControlsVisibliity() {
-    controlsDisplay.hidden = !onOffValue
-    onOffLabel.textContent = onOffValue ? 'On' : 'Off'
+    controlsDisplay.hidden = !onOffSwitch.checked
+    onOffLabel.textContent = onOffSwitch.checked ? 'On' : 'Off'
 }
 
 function updateOnOffValue() {
-    onOffValue = onOffSwitch.checked
     setControlsVisibliity();
-    updateLights();
-}
-
-function updateRgbValue() {
-    rgbValue = rgbSwitch.value
-    updateLights();
-}
-
-function updateWhiteValue() {
-    whiteValue = whiteSwitch.value
     updateLights();
 }
 
@@ -90,6 +78,12 @@ function setReady() {
     whiteSwitch.disabled = false;
 }
 
+function showError(msg) {
+    document.querySelector('#error strong').textContent = msg;
+    document.getElementById("error").hidden = false;
+    setBusy();
+}
+
 function updateLights() {
     if(busy) {
         return;
@@ -97,9 +91,9 @@ function updateLights() {
     setBusy();
 
     let formData = new FormData();
-    formData.append('onoff', onOffValue);
-    formData.append('rgb', rgbValue);
-    formData.append('white', whiteValue);
+    formData.append('onoff', onOffSwitch.checked ? "checked" : "off");
+    formData.append('rgb', rgbSwitch.value);
+    formData.append('white', whiteSwitch.value);
 
     fetch('/update',{
         method: "POST",
@@ -115,15 +109,35 @@ function updateLights() {
             setReady();
         })
         .catch((error) => {
-            setReady();
+            showError("Could not update lights")
         });
 }
 
-onOffSwitch.addEventListener("change", updateOnOffValue);
-rgbSwitch.addEventListener("change", updateRgbValue);
-whiteSwitch.addEventListener("change", updateWhiteValue);
+function init() {
+    fetch('/status')
+        .then((response) => {
+            if (response.ok) {
+                return response.json();
+            }
+            throw new Error('Something went wrong');
+            })
+        .then((responseJson) => {
+            onOffSwitch.checked = responseJson.onoff == 'checked'
+            rgbSwitch.value =  responseJson.rgb
+            whiteSwitch.value = responseJson.white
+            setControlsVisibliity();
+            setReady();
+        })
+        .catch((error) => {
+            showError("Cannot read status from lights")
+        });
 
-setControlsVisibliity();
+}
+onOffSwitch.addEventListener("change", updateOnOffValue);
+rgbSwitch.addEventListener("change", updateLights);
+whiteSwitch.addEventListener("change", updateLights);
+document.addEventListener('DOMContentLoaded', init);
+
 </script>
 </body>
 </html>
