@@ -11,16 +11,27 @@ pi = pigpio.pi()
 # Default light values
 ONOFF = ''
 RGB = '#000000'
-WHITE = '0'
 DATAPATH = 'data.json'
+
+def isGrey(string):
+    chars = list(string.lstrip('#'))
+    return (chars[0]+chars[1]) == (chars[2]+chars[3])  == (chars[4]+chars[5])
 
 def setLightValues(red, green, blue, white):
     # Commented for non-pi testing. Bring back to make it do stuff
-    # pi.set_PWM_dutycycle(24, red)
-    # pi.set_PWM_dutycycle(20, blue)
-    # pi.set_PWM_dutycycle(25, green)
-    # pi.set_PWM_dutycycle(18, white)
-    print ("set lights")
+    if(white):
+        print ("set white to ", white)
+        # pi.set_PWM_dutycycle(24, 0)
+        # pi.set_PWM_dutycycle(20, 0)
+        # pi.set_PWM_dutycycle(25, 0)
+        # pi.set_PWM_dutycycle(18, red)
+    else:
+        print ("set rgb ", red, green, blue)
+        # pi.set_PWM_dutycycle(24, red)
+        # pi.set_PWM_dutycycle(20, blue)
+        # pi.set_PWM_dutycycle(25, green)
+        # pi.set_PWM_dutycycle(18, 0)
+
 
 @app.route('/')
 def index():
@@ -28,7 +39,7 @@ def index():
 
 @app.route('/update', methods=['POST'])
 def update():
-    global RGB, WHITE, ONOFF
+    global RGB, ONOFF
 
     # Turn it all off
     if request.form.get('onoff') == 'off':
@@ -38,15 +49,16 @@ def update():
     # Set on values as per data supplied
     else:
         ONOFF='checked'
-        WHITE = int(request.form.get('white'))
         RGB = request.form.get('rgb')
-
         rgbValues = tuple(int(RGB.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
+        if(isGrey(RGB)):
+            setLightValues(0, 0, 0, rgbValues[0])
+        else:
+            setLightValues(rgbValues[0], rgbValues[1], rgbValues[2], 0)
 
-        setLightValues(rgbValues[0], rgbValues[1], rgbValues[2], WHITE)
 
     # Store data for persistence
-    updateData = {"onoff": ONOFF, "rgb": RGB, "white": WHITE}
+    updateData = {"onoff": ONOFF, "rgb": RGB}
     with open(DATAPATH, 'w') as f:
         json.dump(updateData, f)
 

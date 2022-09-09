@@ -83,14 +83,8 @@ function updatePreview(col) {
 }
 
 function setWhite() {
-    whiteValue = 1;
     colorPicker.color.hexString = '#ffffff'
     updatePreview();
-    updateLights();
-}
-
-function updatePicker() {
-    whiteValue = 0
     updateLights();
 }
 
@@ -102,9 +96,7 @@ function updateLights() {
     let formData = new FormData();
     formData.append('onoff', onOffSwitch.checked ? "checked" : "off");
     formData.append('rgb', colorPicker.color.hexString );
-    formData.append('white', whiteValue);
 
-    console.log(formData.get('white'))
     fetch('/update',{
         method: "POST",
         body: formData
@@ -133,7 +125,6 @@ function init() {
             })
         .then((responseJson) => {
             onOffSwitch.checked = responseJson.onoff == 'checked'
-            whiteValue = responseJson.white
             bg.style.backgroundColor = responseJson.rgb
 
             colorPicker = new iro.ColorPicker("#rgb", {
@@ -142,7 +133,7 @@ function init() {
                 color: responseJson.rgb
             });
             colorPicker.on('color:change', updatePreview);
-            colorPicker.on('input:end', updatePicker);
+            colorPicker.on('input:end', updateLights);
 
             setControlsVisibliity();
             setReady();
