@@ -146,7 +146,7 @@ function init() {
             })
         .then((responseJson) => {
             onOffSwitch.checked = responseJson.onoff == 'checked'
-            onOffPosts.checked = responseJson.onoffPosts == 'checked'
+            onOffPosts.checked = responseJson.posts == 'checked'
             bg.style.backgroundColor = responseJson.rgb
 
             colorPicker = new iro.ColorPicker("#rgb", {
